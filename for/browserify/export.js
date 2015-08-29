@@ -1,6 +1,6 @@
 
 const PATH = require("path");
-const FS = require("fs");
+const FS = require("fs-extra");
 const BROWSERIFY = require("browserify");
 
 
@@ -45,13 +45,24 @@ exports.app = function (options) {
 		
 				        var distPath = PATH.join(options.distPath, req.params[0]);
 				        
-				        return FS.writeFile(distPath, data, "utf8", function (err) {
+				        function ensureDirectory (callback) {
+				        	return FS.exists(PATH.dirname(distPath), function(exists) {
+				        	   if (exists) return callback(null); 
+				        	   return FS.mkdirs(PATH.dirname(distPath), callback);
+				        	});
+				        }
+				        
+				        return ensureDirectory(function (err) {
 				        	if (err) return next(err);
-		
-							res.writeHead(200, {
-								"Content-Type": "application/javascript"
-							});
-							return res.end(data);
+
+					        return FS.writeFile(distPath, data, "utf8", function (err) {
+					        	if (err) return next(err);
+			
+								res.writeHead(200, {
+									"Content-Type": "application/javascript"
+								});
+								return res.end(data);
+					        });
 				        });
 					});
 				});
