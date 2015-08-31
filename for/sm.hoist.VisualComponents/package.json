@@ -1,0 +1,8 @@
+{
+  "name": "0-export-for-sm.hoist.VisualComponents",
+  "version": "0.0.0",
+  "private": true,
+  "main": "export.js",
+  "dependencies": {
+  }
+}

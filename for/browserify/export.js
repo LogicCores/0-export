@@ -34,37 +34,56 @@ exports.app = function (options) {
 		            console.log("Browserifying '" + path + "' ...");
 
 					var browserify = BROWSERIFY({
-						basedir: PATH.dirname(path)
+						basedir: PATH.dirname(path),
+						noParse: [
+							'systemjs/dist/system.src.js'
+						]
 		//				standalone: ''
 					});
 					browserify.add("./" + PATH.basename(path));
 		
 					return browserify.bundle(function (err, data) {
 						if (err) return next(err);
-		
-						data = require("../defs").transform(data);
-		
-				        var distPath = PATH.join(options.distPath, req.params[0]);
-				        
-				        function ensureDirectory (callback) {
-				        	return FS.exists(PATH.dirname(distPath), function(exists) {
-				        	   if (exists) return callback(null); 
-				        	   return FS.mkdirs(PATH.dirname(distPath), callback);
-				        	});
-				        }
-				        
-				        return ensureDirectory(function (err) {
-				        	if (err) return next(err);
 
-					        return FS.writeFile(distPath, data, "utf8", function (err) {
-					        	if (err) return next(err);
+						function appendGlobalScripts (data, callback) {
+							// TODO: Replace dynamically
+							if (/;\(\{"APPEND_AS_GLOBAL":"/.test(data)) {
+								// TODO: Fix this
+								data += FS.readFileSync(
+									PATH.join(__dirname, "../../../../cores/load/for/requirejs/node_modules/requirejs/require.js"),
+									"utf8"
+								);
+							}
+							return callback(null, data);
+						}
+
+						return appendGlobalScripts(data, function (err, data) {
+							if (err) return next(err);
+
+							data = require("../defs").transform(data);
 			
-								res.writeHead(200, {
-									"Content-Type": "application/javascript"
-								});
-								return res.end(data);
+					        var distPath = PATH.join(options.distPath, req.params[0]);
+					        
+					        function ensureDirectory (callback) {
+					        	return FS.exists(PATH.dirname(distPath), function(exists) {
+					        	   if (exists) return callback(null); 
+					        	   return FS.mkdirs(PATH.dirname(distPath), callback);
+					        	});
+					        }
+					        
+					        return ensureDirectory(function (err) {
+					        	if (err) return next(err);
+	
+						        return FS.writeFile(distPath, data, "utf8", function (err) {
+						        	if (err) return next(err);
+				
+									res.writeHead(200, {
+										"Content-Type": "application/javascript"
+									});
+									return res.end(data);
+						        });
 					        });
-				        });
+						});
 					});
 				});
 	        }
