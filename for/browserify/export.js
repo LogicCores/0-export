@@ -46,14 +46,20 @@ exports.app = function (options) {
 						if (err) return next(err);
 
 						function appendGlobalScripts (data, callback) {
-							// TODO: Replace dynamically
-							if (/;\(\{"APPEND_AS_GLOBAL":"/.test(data)) {
-								// TODO: Fix this
+
+							var re = /;\(\{"APPEND_AS_GLOBAL":"([^"]+)"\}\);/g;
+							var m = null;
+							while ( (m = re.exec(data)) ) {
+								data += '\nvar __define = window.define; delete window.define;\n';
 								data += FS.readFileSync(
-									PATH.join(__dirname, "../../../../cores/load/for/requirejs/node_modules/requirejs/require.js"),
+									// TODO: Suppor paths relative to file here once we can get containing
+									//       file info from browserify.
+									PATH.join(__dirname, "../../../../" + m[1]),
 									"utf8"
 								);
+								data += '\nif (typeof window.define === "undefined") window.define = __define;\n';
 							}
+
 							return callback(null, data);
 						}
 
