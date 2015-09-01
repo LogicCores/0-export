@@ -21,6 +21,13 @@ exports.parseForUri = function (configPath, uri, callback) {
                 if (!page) {
                     return callback(new Error("No components found in manifest '" + manifestPath + "' for uri '" + pageUri + "'!"));
                 }
+
+                // TODO: Use config adapter to instanciate config.
+                page = JSON.parse(JSON.stringify(page).replace(
+                    /\{\{__DIRNAME__\}\}/g,
+                    PATH.dirname(manifestPath)
+                ));
+
                 return callback(null, page);
             });
 	    }
