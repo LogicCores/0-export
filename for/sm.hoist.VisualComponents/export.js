@@ -12,7 +12,7 @@ exports.parseForUri = function (configPath, uri, callback) {
 
     // TODO: Add proper cache management instead of just checking if it exists.
 	return FS.exists(manifestPath, function (exists) {
-	    
+
 	    function returnPageManifest (callback) {
 	        return FS.readFile(manifestPath, "utf8", function (err, data) {
                 var manifest = JSON.parse(data);
@@ -33,39 +33,77 @@ exports.parseForUri = function (configPath, uri, callback) {
 	    }
 	    
 	    if (exists) {
-	        return returnPageManifest(callback);
+//	        return returnPageManifest(callback);
 	    }
 
-        var proc = SPAWN(SM_HOIST_COMMAND_PATH, [
-            configPath,
-            "--build",
-            "--uri", uri
-        ], {
-        	env: process.env
-        });
-        proc.on("error", function(err) {
-        	return callback(err);
-        });
-        var stdout = [];
-        var stderr = [];
-        proc.stdout.on('data', function (data) {
-        	stdout.push(data.toString());
-    		process.stdout.write(data);
-        });
-        proc.stderr.on('data', function (data) {
-        	stderr.push(data.toString());
-    		process.stderr.write(data);
-        });
-        proc.on('close', function (code) {
-        	if (code) {
-        		var err = new Error("sm.hoist exited with code: " + code);
-        		err.code = code;
-        		err.stdout = stdout;
-        		err.stderr = stderr;
-        		return callback(err);
-        	}
-	        return returnPageManifest(callback);
-        });
+	    function runOutOfProcess () {
+
+            console.log("Hoist out of process:", uri);
+
+    	    var proc = SPAWN(SM_HOIST_COMMAND_PATH, [
+                configPath,
+                "--build",
+                "--uri", uri
+            ], {
+            	env: process.env
+            });
+            proc.on("error", function(err) {
+            	return callback(err);
+            });
+            var stdout = [];
+            var stderr = [];
+            proc.stdout.on('data', function (data) {
+            	stdout.push(data.toString());
+        		process.stdout.write(data);
+            });
+            proc.stderr.on('data', function (data) {
+            	stderr.push(data.toString());
+        		process.stderr.write(data);
+            });
+            proc.on('close', function (code) {
+            	if (code) {
+            		var err = new Error("sm.hoist exited with code: " + code);
+            		err.code = code;
+            		err.stdout = stdout;
+            		err.stderr = stderr;
+            		return callback(err);
+            	}
+    	        return returnPageManifest(callback);
+            });
+	    }
+
+	    function runInProcess (callback) {
+
+	        const EXPORT = require("../../../../lib/sm.hoist.VisualComponents/lib/export").forLib(
+	            require("../../../../lib/sm.hoist.VisualComponents/lib/lib")
+	        );
+
+            return FS.readFile(configPath, "utf8", function (err, config) {
+                if (err) return callback(err);
+
+                config = config.replace(/\{\{__DIRNAME__\}\}/g, PATH.dirname(configPath));
+                config = config.replace(/\{\{env\.PORT\}\}/g, process.env.PORT);
+                config = JSON.parse(config).config;
+
+    	        return EXPORT.export({
+    	            build: true,
+    	            uri: uri,
+    	            config: config["sm.hoist.visualcomponents/0"]
+    	        }).then(function () {
+
+    	            return returnPageManifest(callback);
+    	        }, callback);
+            });
+	    }
+
+	    // If we are in NodeJS 4 we can run it in process.
+	    // Otherwise we have to run it out of process as
+	    // iojs/nodejs >= 4 is required by jsdom used by 'sm.hoist.VisualComponents'.
+	    if ( parseInt(process.version.replace(/^v/, "").split(".").shift()) >= 4 ) {
+	        return runInProcess(callback);
+	    } else {
+    	    return runOutOfProcess(callback);
+	    }
 	});
 }
 
