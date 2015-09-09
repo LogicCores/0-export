@@ -19,12 +19,6 @@ exports.parseForUri = function (configPath, uri, callback) {
     
                 console.log("manifestPath", manifestPath);
 
-                console.log("manifest dir 1", FS.readdirSync(PATH.join(__dirname, "../../../..")));
-                console.log("manifest dir 2", FS.readdirSync(PATH.join(__dirname, "../../../../cache")));
-                console.log("manifest dir 3", FS.readdirSync(PATH.join(__dirname, "../../../../cache/0")));
-                console.log("manifest dir 4", FS.readdirSync(PATH.join(__dirname, "../../../../cache/0/skin")));
-                console.log("manifest dir 5", FS.readdirSync(PATH.join(__dirname, "../../../../cache/0/skin/components")));
-
     	        return FS.readFile(manifestPath, "utf8", function (err, data) {
     
                     console.log("data", data);	            
@@ -98,21 +92,17 @@ exports.parseForUri = function (configPath, uri, callback) {
     
                 return FS.readFile(configPath, "utf8", function (err, config) {
                     if (err) return callback(err);
-    
-        	        console.log("config", config);
-    
+
                     config = config.replace(/\{\{__DIRNAME__\}\}/g, PATH.dirname(configPath));
                     config = config.replace(/\{\{env\.PORT\}\}/g, process.env.PORT);
                     config = JSON.parse(config).config;
-    
-        	        console.log("config", config);
     
         	        return EXPORT.export({
         	            build: true,
         	            uri: uri,
         	            config: config["sm.hoist.visualcomponents/0"]
         	        }).then(function () {
-    
+
         	            return returnPageManifest(callback);
         	        }, callback);
                 });
