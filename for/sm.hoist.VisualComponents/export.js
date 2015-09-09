@@ -74,16 +74,24 @@ exports.parseForUri = function (configPath, uri, callback) {
 
 	    function runInProcess (callback) {
 
+            console.log("Hoist in process:", uri);
+
 	        const EXPORT = require("../../../../lib/sm.hoist.VisualComponents/lib/export").forLib(
 	            require("../../../../lib/sm.hoist.VisualComponents/lib/lib")
 	        );
 
+	        console.log("configPath", configPath);
+
             return FS.readFile(configPath, "utf8", function (err, config) {
                 if (err) return callback(err);
+
+    	        console.log("config", config);
 
                 config = config.replace(/\{\{__DIRNAME__\}\}/g, PATH.dirname(configPath));
                 config = config.replace(/\{\{env\.PORT\}\}/g, process.env.PORT);
                 config = JSON.parse(config).config;
+
+    	        console.log("config", config);
 
     	        return EXPORT.export({
     	            build: true,
@@ -99,6 +107,7 @@ exports.parseForUri = function (configPath, uri, callback) {
 	    // If we are in NodeJS 4 we can run it in process.
 	    // Otherwise we have to run it out of process as
 	    // iojs/nodejs >= 4 is required by jsdom used by 'sm.hoist.VisualComponents'.
+	    console.log("NodeJS version:", process.version);
 	    if ( parseInt(process.version.replace(/^v/, "").split(".").shift()) >= 4 ) {
 	        return runInProcess(callback);
 	    } else {
