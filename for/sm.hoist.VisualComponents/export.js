@@ -11,6 +11,7 @@ exports.parseForUri = function (configPath, uri, callback) {
     
     	// TODO: Derive dynamically
     	var manifestPath = PATH.join(__dirname, "../../../../cache/0/skin/components/hoisted.json");
+        var pageUri = uri.replace(/(^\/|\.html?)/g, "");
     
         // TODO: Add proper cache management instead of just checking if it exists.
     	return FS.exists(manifestPath, function (exists) {
@@ -24,7 +25,6 @@ exports.parseForUri = function (configPath, uri, callback) {
                     console.log("data", data);	            
     	            
                     var manifest = JSON.parse(data);
-                    var pageUri = uri.replace(/(^\/|\.html?)/g, "");
                     var page = manifest.pages[pageUri];
                     if (!page) {
                         return callback(new Error("No components found in manifest '" + manifestPath + "' for uri '" + pageUri + "'!"));
@@ -101,9 +101,20 @@ exports.parseForUri = function (configPath, uri, callback) {
         	            build: true,
         	            uri: uri,
         	            config: config["sm.hoist.visualcomponents/0"]
-        	        }).then(function () {
+        	        }).then(function (descriptor) {
+        	            
+                        // TODO: Use config adapter to instanciate config.
+                        descriptor = JSON.parse(JSON.stringify(descriptor).replace(
+                            /\{\{__DIRNAME__\}\}/g,
+                            PATH.dirname(manifestPath)
+                        ));
 
-        	            return returnPageManifest(callback);
+                        var page = descriptor.pages[pageUri];
+                        if (!page) {
+                            return callback(new Error("No components found in manifest '" + manifestPath + "' for uri '" + pageUri + "'!"));
+                        }
+
+                        return callback(null, page);
         	        }, callback);
                 });
     	    }

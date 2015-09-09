@@ -66,7 +66,7 @@ exports.app = function (options) {
 						return appendGlobalScripts(data, function (err, data) {
 							if (err) return next(err);
 
-							data = require("../defs").transform(data);
+							data = require("../defs/export").transform(data);
 			
 					        var distPath = PATH.join(options.distPath, req.params[0]);
 					        
