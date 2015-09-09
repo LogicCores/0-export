@@ -14,7 +14,14 @@ exports.parseForUri = function (configPath, uri, callback) {
 	return FS.exists(manifestPath, function (exists) {
 
 	    function returnPageManifest (callback) {
+
+            console.log("manifestPath", manifestPath);
+            console.log("manifest dir", FS.readdirSync(PATH.dirname(manifestPath)));
+
 	        return FS.readFile(manifestPath, "utf8", function (err, data) {
+
+                console.log("data", data);	            
+	            
                 var manifest = JSON.parse(data);
                 var pageUri = uri.replace(/(^\/|\.html?)/g, "");
                 var page = manifest.pages[pageUri];
