@@ -1,5 +1,8 @@
 {
   "name": "0-export-for-sm.hoist.VisualComponents",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "escape-regexp-component": "^1.0.2"
+  }
 }

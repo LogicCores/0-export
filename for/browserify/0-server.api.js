@@ -50,7 +50,7 @@ exports.app = function (options) {
 							var re = /;\(\{"APPEND_AS_GLOBAL":"([^"]+)"\}\);/g;
 							var m = null;
 							while ( (m = re.exec(data)) ) {
-								data += '\nvar __define = window.define; delete window.define;\n';
+								data += '\nvar __define = window.define; window.define = null;\n';
 								data += FS.readFileSync(
 									// TODO: Suppor paths relative to file here once we can get containing
 									//       file info from browserify.
