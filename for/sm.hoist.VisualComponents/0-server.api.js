@@ -17,6 +17,7 @@ exports.forLib = function (LIB) {
             var uri = req.params[0];
             var htmRequested = /\.html?$/.test(uri);
 
+            // TODO: Get context object name via config
             return req.context.page.skinContextForUri(
                 uri
             ).then(function (skinContext) {
