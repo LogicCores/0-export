@@ -18,9 +18,9 @@ exports.forLib = function (LIB) {
             var htmRequested = /\.html?$/.test(uri);
 
             // TODO: Get context object name via config
-            return req.context.page.skinContextForUri(
+            return req.context.page.contextForUri(
                 uri
-            ).then(function (skinContext) {
+            ).then(function (pageContext) {
     
                 if (htmRequested) {
     
@@ -32,7 +32,7 @@ exports.forLib = function (LIB) {
                     // time selcting attributes with colons in it. Likely true for many other
                     // parsers as well.
                     if (/;convert-to-data;/.test(req.headers["x-component-namespace"] || "")) {
-                        return FS.readFile(skinContext.skin.data.path, "utf8", function (err, html) {
+                        return FS.readFile(pageContext.skin.data.path, "utf8", function (err, html) {
                             if (err) return next(err);
                     
     						var re = /(<|\s)component\s*:\s*([^=]+)(\s*=\s*"[^"]*"(?:\/?>|\s))/g;
@@ -51,10 +51,10 @@ exports.forLib = function (LIB) {
                         });
                     }
     
-                    return FS.createReadStream(skinContext.skin.data.path).pipe(res);
+                    return FS.createReadStream(pageContext.skin.data.path).pipe(res);
                 }
 
-                var baseUrlParts = URL.parse(skinContext.skin.host.baseUrl);
+                var baseUrlParts = URL.parse(pageContext.skin.host.baseUrl);
                 var configOverrides = {};
                 LIB._.merge(configOverrides, options.config);
                 LIB._.merge(configOverrides, {
@@ -67,8 +67,8 @@ exports.forLib = function (LIB) {
                 });
 
                 return EXPORT.parseForUri(
-                    skinContext.skin.data.componentsPath,
-                    skinContext.skin.host.path,
+                    pageContext.skin.data.componentsPath,
+                    pageContext.skin.host.path,
                     configOverrides,
                     function (err, manifest) {
                         if (err) return next(err);
@@ -82,11 +82,24 @@ exports.forLib = function (LIB) {
                             err.code = 404;
                             return next(err);
                         }
-    
-                        res.writeHead(200, {
-                            "Content-Type": "text/html"
+
+                        //return FS.createReadStream(manifest.components.html.fsHtmlPath).pipe(res);
+                        // TODO: Do this via output rewrite middleware.
+                        return FS.readFile(manifest.components.html.fsHtmlPath, "utf8", function (err, html) {
+                            if (err) return next(err);
+
+
+                            html = html.replace(/\{\{PAGE\.context\}\}/g, encodeURIComponent(JSON.stringify(
+                                pageContext.clientContext || {}
+                            )));
+
+
+                            res.writeHead(200, {
+                                "Content-Type": "text/html"
+                            });
+                            res.end(html);
+                            return html;
                         });
-                        return FS.createReadStream(manifest.components.html.fsHtmlPath).pipe(res);
                     }
                 );
             }).catch(next);
