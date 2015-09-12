@@ -9,11 +9,13 @@ exports.forLib = function (LIB) {
 
             var Entity = function (instanceConfig) {
                 var self = this;
-                var config = {};
-                LIB._.merge(config, defaultConfig)
-                LIB._.merge(config, instanceConfig)
 
                 self.AspectInstance = function (aspectConfig) {
+
+                    var config = {};
+                    LIB._.merge(config, defaultConfig);
+                    LIB._.merge(config, instanceConfig);
+                    LIB._.merge(config, aspectConfig);
 
                     return LIB.Promise.resolve({
                         app: function () {
