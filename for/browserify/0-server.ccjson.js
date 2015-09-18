@@ -2,7 +2,7 @@
 exports.forLib = function (LIB) {
     var ccjson = this;
 
-    const SERVER = require("./0-server.api");
+    const SERVER = require("./0-server.api").forLib(LIB);
 
     return LIB.Promise.resolve({
         forConfig: function (defaultConfig) {
