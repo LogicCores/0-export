@@ -3,6 +3,7 @@ const PATH = require("path");
 // TODO: Get from `components/Library.NodeJS`
 const FS = require("fs-extra");
 const BROWSERIFY = require("browserify");
+const STRINGIFY = require("stringify");
 
 
 exports.forLib = function (LIB) {
@@ -19,6 +20,8 @@ exports.forLib = function (LIB) {
 				]
 	//				standalone: ''
 			});
+			browserify.transform(STRINGIFY(['.htm', '.html']));
+			
 			files.forEach(function (path) {
 				browserify.add("./" + path);
 			});
