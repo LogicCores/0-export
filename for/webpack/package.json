@@ -1,5 +1,10 @@
 {
   "name": "0-export-for-webpack",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "raw-loader": "^0.5.1",
+    "webpack": "^1.12.2",
+    "webpack-dev-middleware": "^1.2.0"
+  }
 }
