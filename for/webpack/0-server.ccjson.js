@@ -29,7 +29,7 @@ exports.forLib = function (LIB) {
 
 //console.log("config", config);
                                         var compilerConfig = {
-                            				debug: true,
+                            				debug: false,
                             				bail: true,
                             				resolveLoader: {
                             				    "alias": {
@@ -88,10 +88,10 @@ exports.forLib = function (LIB) {
                                         // @see https://github.com/webpack/webpack-dev-middleware
                                         var app = WEBPACK_APP(WEBPACK(compilerConfig), {
 
-                                            noInfo: false,
+                                            noInfo: true,
                                             // display no info to console (only warnings and errors)
                                         
-                                            quiet: false,
+                                            quiet: true,
                                             // display nothing to the console
                                         
                                             lazy: true,

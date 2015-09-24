@@ -10,12 +10,12 @@ exports.forLib = function (LIB) {
             var Entity = function (instanceConfig) {
                 var self = this;
 
-                self.AspectInstance = function (aspectConfig) {
+                var config = {};
+                LIB._.merge(config, defaultConfig);
+                LIB._.merge(config, instanceConfig);
+                config = ccjson.attachDetachedFunctions(config);
 
-                    var config = {};
-                    LIB._.merge(config, defaultConfig);
-                    LIB._.merge(config, instanceConfig);
-                    LIB._.merge(config, aspectConfig);
+                self.AspectInstance = function (aspectConfig) {
 
                     return LIB.Promise.resolve({
                         app: function () {
