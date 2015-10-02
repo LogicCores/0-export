@@ -1,8 +1,8 @@
 
-const DEFS = require("defs");
-
-
 exports.transform = function (code) {
+
+	const DEFS = require("defs");
+
 
     var result = DEFS(
         code.toString(),

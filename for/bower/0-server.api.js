@@ -1,13 +1,14 @@
 
 exports.forLib = function (LIB) {
 
-    const GRUNT = require("grunt");
-
 	var exports = {};
 
 
     var currentlyConcatenating = {};
     exports.concatenate = function (componentsPath, distPath, config) {
+
+        const GRUNT = require("grunt");
+
         if (currentlyConcatenating[componentsPath]) {
             return currentlyConcatenating[componentsPath];
         }
@@ -69,7 +70,13 @@ exports.forLib = function (LIB) {
             }
 
 			return LIB.fs.exists(distPath, function (exists) {
-		        if (exists && req.params[0]) {
+		        if (
+		            exists &&
+		            (
+		                req.params[0] ||
+		                options.alwaysRebuild === false
+		            )
+		        ) {
 		           	// We return a pre-built file if it exists and are being asked for it
 		           	return serve();
 		        } else {

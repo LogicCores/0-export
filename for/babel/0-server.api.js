@@ -1,12 +1,13 @@
 
-const PATH = require("path");
-const FS = require("fs");
-const BABEL = require("babel");
-
 
 exports.app = function (options) {
 
     return function (req, res, next) {
+
+        const PATH = require("path");
+        const FS = require("fs");
+        const BABEL = require("babel");
+
 
         var path = PATH.join(options.basePath,  req.params[0]);
 

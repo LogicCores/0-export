@@ -2,8 +2,6 @@
 const PATH = require("path");
 // TODO: Get from `components/Library.NodeJS`
 const FS = require("fs-extra");
-const BROWSERIFY = require("browserify");
-const STRINGIFY = require("stringify");
 
 
 exports.forLib = function (LIB) {
@@ -11,6 +9,12 @@ exports.forLib = function (LIB) {
 	var exports = {};
 
 	exports.bundleFiles = function (baseDir, files, distPath) {
+
+
+		const BROWSERIFY = require("browserify");
+		const STRINGIFY = require("stringify");
+
+
 		return LIB.Promise.promisify(function (callback) {
 
 			var browserify = BROWSERIFY({
@@ -69,10 +73,15 @@ exports.forLib = function (LIB) {
 	        var path = PATH.join(options.distPath, req.params[0]);
 	
 			return FS.exists(path, function (exists) {
-	
-		        if (exists && /\.dist\./.test(path)) {
+
+		        if (
+		        	exists &&
+		        	(
+		        		/\.dist\./.test(path) ||
+		        		options.alwaysRebuild === false
+		        	)
+		        ) {
 		           	// We return a pre-built file if it exists and are being asked for it
-	
 					res.writeHead(200, {
 						"Content-Type": "application/javascript"
 					});

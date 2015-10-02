@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "raw-loader": "^0.5.1",
+    "send": "^0.13.0",
     "webpack": "^1.12.2",
     "webpack-dev-middleware": "^1.2.0"
   }
