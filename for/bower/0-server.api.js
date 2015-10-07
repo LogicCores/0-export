@@ -57,12 +57,21 @@ exports.forLib = function (LIB) {
 	
 	    return function (req, res, next) {
 
+            var params = req.params;
+            if (options.match) {
+                // TODO: Relocate into generic helper.
+                var expression = new RegExp(options.match.replace(/\//g, "\\/"));
+                var m = expression.exec(req.params[0]);
+                if (!m) return next();
+                params = m.slice(1);
+            }
+
 	        var componentsPath = options.packagePath;
-	        var distPath = LIB.path.join(options.distPath, "bundle." + req.params[1]);
+	        var distPath = LIB.path.join(options.distPath, "bundle." + params[1]);
 
             function serve () {
     			res.writeHead(200, {
-    				"Content-Type": (req.params[1] === "js") ?
+    				"Content-Type": (params[1] === "js") ?
     				    "application/javascript" :
     				    "text/css"
     			});
@@ -73,7 +82,7 @@ exports.forLib = function (LIB) {
 		        if (
 		            exists &&
 		            (
-		                req.params[0] ||
+		                params[0] ||
 		                options.alwaysRebuild === false
 		            )
 		        ) {
