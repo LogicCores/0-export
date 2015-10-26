@@ -74,10 +74,10 @@ exports.forLib = function (LIB) {
                                     pageContext.clientContext || {}
                                 )));
 
-                                // Re-base all style and script paths.
+                                // Re-base all links, style and script paths.
                                 // TODO: Add option to 'sm.hoist.VisualComponents' to insert variables
                                 //       so we can prefix everything by replacing one variable.
-                                var re = /(<img.+?src="|<script.+?src="|<link.+?href=")(\/[^"]+)/g;
+                                var re = /(<a.+?href="|<img.+?src="|<script.+?src="|<link.+?href=")(\/[^"]*)/g;
                                 var m = null;
                                 var replace = {};
                                 var baseSubPath = URL.parse(pageContext.page.host.baseUrl).pathname.replace(/\/$/, "");
