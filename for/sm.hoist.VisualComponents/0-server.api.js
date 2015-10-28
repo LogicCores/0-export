@@ -26,12 +26,21 @@ exports.forLib = function (LIB) {
                 return page.contextForUri(
                     uri
                 ).then(function (pageContext) {
-    
+
                     if (!pageContext) {
                         res.writeHead(404);
                         return res.end("Not Found");
                     }
-    
+                    if (
+                        pageContext.page.data.path === "/Index.md" &&
+                        req.flags &&
+                        req.flags["export.sm.hoist.VisualComponents"] &&
+                        req.flags["export.sm.hoist.VisualComponents"]["404onRootPage"]
+                    ) {
+                        res.writeHead(404);
+                        return res.end("Not Found");
+                    }
+
                     var baseUrlParts = URL.parse(pageContext.skin.host.baseUrl);
                     var configOverrides = {};
                     LIB._.merge(configOverrides, options.config);
