@@ -77,8 +77,20 @@ exports.forLib = function (LIB) {
                             // TODO: Do this via output rewrite middleware
                             return FS.readFile(manifest.components.html.fsHtmlPath, "utf8", function (err, html) {
                                 if (err) return next(err);
-    
-    
+
+
+                                // HACK: Update the hostname and port depending on where asset is being requested from.
+                                // TODO: Move this adjustment into a declared plugin so that 'pageContext.clientContext' holds the correct data.
+                                if (
+                                    req.headers.host &&
+                                    pageContext.clientContext &&
+                                    pageContext.clientContext.page &&
+                                    pageContext.clientContext.page.baseUrl
+                                ) {
+                                    pageContext.clientContext.page.baseUrl = pageContext.clientContext.page.baseUrl.replace(/^(https?:\/\/)([^\/]+)(\/.+)$/, "$1" + req.headers.host + "$3");
+                                }
+
+
                                 html = html.replace(/\{\{PAGE\.context\}\}/g, encodeURIComponent(JSON.stringify(
                                     pageContext.clientContext || {}
                                 )));
