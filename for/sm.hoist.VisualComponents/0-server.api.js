@@ -16,8 +16,12 @@ exports.forLib = function (LIB) {
     
         return function (req, res, next) {
 
-            var uri = req.params[0];
-            
+            var uri = (
+                req.state.page &&
+                req.state.page.lookup &&
+                req.state.page.lookup.path
+            ) || req.params[0];
+
             return LIB.Promise.all([
                 context.getAdapterAPI("page"),
                 context.getAdapterAPI("boundary")
@@ -79,21 +83,29 @@ exports.forLib = function (LIB) {
                                 if (err) return next(err);
 
 
+                                var clientContext = pageContext.clientContext || {};
+                                if (
+                                    req.state.page &&
+                                    req.state.page.clientContext
+                                ) {
+                                    clientContext = LIB._.merge(clientContext, req.state.page.clientContext);
+                                }
                                 // HACK: Update the hostname and port depending on where asset is being requested from.
                                 // TODO: Move this adjustment into a declared plugin so that 'pageContext.clientContext' holds the correct data.
                                 if (
                                     req.headers.host &&
-                                    pageContext.clientContext &&
-                                    pageContext.clientContext.page &&
-                                    pageContext.clientContext.page.baseUrl
+                                    clientContext &&
+                                    clientContext.page &&
+                                    clientContext.page.baseUrl
                                 ) {
-                                    pageContext.clientContext.page.baseUrl = pageContext.clientContext.page.baseUrl.replace(/^(https?:\/\/)([^\/]+)(\/.+)$/, "$1" + req.headers.host + "$3");
+                                    clientContext.page.baseUrl = clientContext.page.baseUrl.replace(/^(https?:\/\/)([^\/]+)(\/.+)$/, "$1" + req.headers.host + "$3");
                                 }
 
 
                                 html = html.replace(/\{\{PAGE\.context\}\}/g, encodeURIComponent(JSON.stringify(
-                                    pageContext.clientContext || {}
+                                    clientContext
                                 )));
+
 
                                 function transform (html) {
                                     if (
