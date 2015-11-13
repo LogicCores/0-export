@@ -106,6 +106,9 @@ exports.forLib = function (LIB) {
                                     clientContext
                                 )));
 
+                                // TODO: Support arbitrary variable replacement.
+                                html = html.replace(/\{\{PAGE\.context\.page\.baseUrl\}\}/g, clientContext.page.baseUrl);
+
 
                                 function transform (html) {
                                     if (
