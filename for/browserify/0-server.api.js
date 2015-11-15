@@ -1,15 +1,10 @@
 
-const PATH = require("path");
-// TODO: Get from `components/Library.NodeJS`
-const FS = require("fs-extra");
-
 
 exports.forLib = function (LIB) {
 
 	var exports = {};
 
 	exports.bundleFiles = function (baseDir, files, distPath) {
-
 
 		const BROWSERIFY = require("browserify");
 		const STRINGIFY = require("stringify");
@@ -39,10 +34,10 @@ exports.forLib = function (LIB) {
 					var m = null;
 					while ( (m = re.exec(data)) ) {
 						data += '\nvar __define = window.define; window.define = null;\n';
-						data += FS.readFileSync(
+						data += LIB.fs.readFileSync(
 							// TODO: Suppor paths relative to file here once we can get containing
 							//       file info from browserify.
-							PATH.join(__dirname, "../../../../" + m[1]),
+							LIB.path.join(__dirname, "../../../../" + m[1]),
 							"utf8"
 						);
 						data += '\nif (typeof window.define === "undefined") window.define = __define;\n';
@@ -56,7 +51,7 @@ exports.forLib = function (LIB) {
 	
 					data = require("../defs/export").transform(data);
 	
-			        return FS.outputFile(distPath, data, "utf8", function (err) {
+			        return LIB.fs.outputFile(distPath, data, "utf8", function (err) {
 			        	if (err) return callback(err);
 			        	
 			        	return callback(null, data);
@@ -70,9 +65,9 @@ exports.forLib = function (LIB) {
 	
 	    return function (req, res, next) {
 	
-	        var path = PATH.join(options.distPath, req.params[0]);
+	        var path = LIB.path.join(options.distPath, req.params[0]);
 	
-			return FS.exists(path, function (exists) {
+			return LIB.fs.exists(path, function (exists) {
 
 		        if (
 		        	exists &&
@@ -85,26 +80,26 @@ exports.forLib = function (LIB) {
 					res.writeHead(200, {
 						"Content-Type": "application/javascript"
 					});
-		           	return FS.createReadStream(path).pipe(res);
+		           	return LIB.fs.createReadStream(path).pipe(res);
 	
 		        } else {
 	
 		           	// We build file, store it and return it
 
-		            path = PATH.join(options.basePath, req.params[0]).replace(/\.dist\./, ".");
+		            path = LIB.path.join(options.basePath, req.params[0]).replace(/\.dist\./, ".");
 
-					return FS.exists(path, function (exists) {
+					return LIB.fs.exists(path, function (exists) {
 		
 			            if (!exists) return next();
 	
 			            console.log("Browserifying '" + path + "' ...");
 	
 						return exports.bundleFiles(
-							PATH.dirname(path),
+							LIB.path.dirname(path),
 							[
-								PATH.basename(path)
+								LIB.path.basename(path)
 							],
-							PATH.join(options.distPath, req.params[0])
+							LIB.path.join(options.distPath, req.params[0])
 						).then(function (bundle) {
 							res.writeHead(200, {
 								"Content-Type": "application/javascript"
