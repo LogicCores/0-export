@@ -102,12 +102,24 @@ exports.forLib = function (LIB) {
                                 }
 
 
-                                html = html.replace(/\{\{PAGE\.context\}\}/g, encodeURIComponent(JSON.stringify(
-                                    clientContext
-                                )));
-
-                                // TODO: Support arbitrary variable replacement.
-                                html = html.replace(/\{\{PAGE\.context\.page\.baseUrl\}\}/g, clientContext.page.baseUrl);
+                                // Replace page variables
+            					var re = /{{PAGE\.([^}]+)}}/g;
+            					var m;
+            					var val;
+            					while ( (m = re.exec(html)) ) {
+            					    val = LIB.traverse.get({
+                                        context: clientContext
+                                    }, m[1].split("."));
+                                    if (typeof val === "object") {
+                                        val = encodeURIComponent(JSON.stringify(
+                                            val
+                                        ));
+                                    }
+            						html = html.replace(
+            						    new RegExp(LIB.RegExp_Escape(m[0]), "g"),
+            						    val
+            						);
+            					}
 
 
                                 function transform (html) {
