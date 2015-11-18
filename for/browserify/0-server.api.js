@@ -9,7 +9,6 @@ exports.forLib = function (LIB) {
 		const BROWSERIFY = require("browserify");
 		const STRINGIFY = require("stringify");
 
-
 		return LIB.Promise.promisify(function (callback) {
 
 			var browserify = BROWSERIFY({
@@ -45,17 +44,33 @@ exports.forLib = function (LIB) {
 	
 					return callback(null, data);
 				}
-	
+
 				return appendGlobalScripts(data, function (err, data) {
 					if (err) return callback(err);
-	
+
 					data = require("../defs/export").transform(data);
-	
-			        return LIB.fs.outputFile(distPath, data, "utf8", function (err) {
-			        	if (err) return callback(err);
-			        	
-			        	return callback(null, data);
-			        });
+
+					function checkIfChanged () {
+						return LIB.fs.existsAsync(distPath).then(function (exists) {
+							if (!exists) return true;
+							return LIB.fs.readFileAsync(distPath, "utf8").then(function (existingData) {
+								if (existingData === data) {
+									return false;
+								}
+								return true;
+							});
+						});
+					}
+					
+					return checkIfChanged().then(function (changed) {
+						if (!changed) return callback(null);
+
+				        return LIB.fs.outputFile(distPath, data, "utf8", function (err) {
+				        	if (err) return callback(err);
+				        	
+				        	return callback(null);
+				        });
+					});
 				});
 			});
 		})();
@@ -64,47 +79,50 @@ exports.forLib = function (LIB) {
 	exports.app = function (options) {
 	
 	    return function (req, res, next) {
-	
-	        var path = LIB.path.join(options.distPath, req.params[0]);
-	
-			return LIB.fs.exists(path, function (exists) {
+	    	
+	    	var requestedFilename = req.params[0];
+	    	var sourceFilename = requestedFilename.replace(/\.dist\./, ".");
+
+	        var sourcePath = LIB.path.join(options.basePath, sourceFilename);
+	        var distPath = LIB.path.join(options.distPath, sourceFilename);
+
+	        function returnDistFile () {
+                return LIB.send(req, LIB.path.basename(distPath), {
+            		root: LIB.path.dirname(distPath),
+            		maxAge: options.clientCacheTTL || 0
+            	}).on("error", next).pipe(res);
+	        }
+
+			return LIB.fs.exists(distPath, function (exists) {
 
 		        if (
 		        	exists &&
 		        	(
-		        		/\.dist\./.test(path) ||
+		        		/\.dist\./.test(requestedFilename) ||
 		        		options.alwaysRebuild === false
 		        	)
 		        ) {
 		           	// We return a pre-built file if it exists and are being asked for it
-					res.writeHead(200, {
-						"Content-Type": "application/javascript"
-					});
-		           	return LIB.fs.createReadStream(path).pipe(res);
-	
+					return returnDistFile();
 		        } else {
 	
 		           	// We build file, store it and return it
 
-		            path = LIB.path.join(options.basePath, req.params[0]).replace(/\.dist\./, ".");
-
-					return LIB.fs.exists(path, function (exists) {
+					return LIB.fs.exists(sourcePath, function (exists) {
 		
 			            if (!exists) return next();
 	
-			            console.log("Browserifying '" + path + "' ...");
+			            console.log("Browserifying '" + sourcePath + "' ...");
 	
 						return exports.bundleFiles(
-							LIB.path.dirname(path),
+							LIB.path.dirname(sourcePath),
 							[
-								LIB.path.basename(path)
+								LIB.path.basename(sourcePath)
 							],
-							LIB.path.join(options.distPath, req.params[0])
-						).then(function (bundle) {
-							res.writeHead(200, {
-								"Content-Type": "application/javascript"
-							});
-							return res.end(bundle);
+							distPath
+						).then(function () {
+
+							return returnDistFile();
 						}).catch(next);
 					});
 		        }
