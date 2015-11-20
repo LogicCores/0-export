@@ -70,12 +70,10 @@ exports.forLib = function (LIB) {
 	        var distPath = LIB.path.join(options.distPath, "bundle." + params[1]);
 
             function serve () {
-    			res.writeHead(200, {
-    				"Content-Type": (params[1] === "js") ?
-    				    "application/javascript" :
-    				    "text/css"
-    			});
-               	return LIB.fs.createReadStream(distPath).pipe(res);
+                return LIB.send(req, LIB.path.basename(distPath), {
+            		root: LIB.path.dirname(distPath),
+            		maxAge: options.clientCacheTTL || 0
+            	}).on("error", next).pipe(res);
             }
 
 			return LIB.fs.exists(distPath, function (exists) {

@@ -38,9 +38,11 @@ exports.forLib = function (LIB) {
                             		        		config.alwaysRebuild === false
                             		        	)
                             		        ) {
+
                             		           	// We return a pre-built file if it exists and are being asked for it
                             		           	return SEND(req, LIB.path.basename(path), {
-                                    				root: LIB.path.dirname(path)
+                                    				root: LIB.path.dirname(path),
+                                            		maxAge: config.clientCacheTTL || 0
                                     			}).on("error", next).pipe(res);
 
                             		        } else {

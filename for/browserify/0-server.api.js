@@ -70,7 +70,7 @@ exports.forLib = function (LIB) {
 				        	
 				        	return callback(null);
 				        });
-					});
+					}).catch(callback);
 				});
 			});
 		})();
