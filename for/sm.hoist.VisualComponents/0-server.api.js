@@ -194,6 +194,7 @@ console.log("serve pre-built!");
                                             var m = null;
                                             var replace = {};
                                             var baseSubPath = URL.parse(pageContext.page.host.baseUrl).pathname.replace(/\/$/, "");
+                                            baseSubPath += "/{{PAGE.context.skin.assetBuildRevision}}";
                                             while ( (m = re.exec(html)) ) {
                                                 if (m[2].substring(0, baseSubPath.length + 1) === baseSubPath + "/") {
                                                     // Path is already adjusted.
