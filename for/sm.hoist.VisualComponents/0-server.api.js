@@ -194,18 +194,31 @@ console.log("serve pre-built!");
                                             var m = null;
                                             var replace = {};
                                             var baseSubPath = URL.parse(pageContext.page.host.baseUrl).pathname.replace(/\/$/, "");
-                                            baseSubPath += "/{{PAGE.context.skin.assetBuildRevision}}";
+
+                                            function getBaseSubPathForTag (tag) {
+                                                if (/^<a\s/.test(tag)) {
+                                                    return baseSubPath;
+                                                }
+                                                return baseSubPath + "/{{PAGE.context.skin.assetBuildRevision}}";
+                                            }
+                                            var baseSubPathInstance = null;
                                             while ( (m = re.exec(html)) ) {
-                                                if (m[2].substring(0, baseSubPath.length + 1) === baseSubPath + "/") {
+
+                                                baseSubPathInstance = getBaseSubPathForTag(m[1]);
+
+                                                if (m[2].substring(0, baseSubPathInstance.length + 1) === baseSubPathInstance + "/") {
                                                     // Path is already adjusted.
                                                 } else {
-                                                    replace[m[0]] = m;
+                                                    replace[m[0]] = {
+                                                        match: m,
+                                                        baseSubPath: baseSubPathInstance
+                                                    };
                                                 }
                                             }
                                             Object.keys(replace).forEach(function (key) {
                                                 html = html.replace(
-                                                    new RegExp(LIB.RegExp_Escape(replace[key][0]), "g"),
-                                                    replace[key][1] + baseSubPath + replace[key][2]
+                                                    new RegExp(LIB.RegExp_Escape(replace[key].match[0]), "g"),
+                                                    replace[key].match[1] + replace[key].baseSubPath + replace[key].match[2]
                                                 );
                                             });
         
