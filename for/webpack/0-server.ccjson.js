@@ -119,7 +119,7 @@ exports.forLib = function (LIB) {
                                         				},
                                         				output: {
                                         					path: config.distPath,
-                                        					publicPath: "/",
+                                        					publicPath: config.publicPath || "/",
                                         					filename: "." + req.params[0]
                                         				}
                                         			};
