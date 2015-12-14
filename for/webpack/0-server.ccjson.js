@@ -151,44 +151,43 @@ exports.forLib = function (LIB) {
                                                                 colors: true
                                                             }
                                                         });
-        
-        
-                                                        // Act when middleware is done sending.
-                                                        var end = res.end;
-                                                        res.end = function () {
-        
-                                                            end.apply(res, arguments);
-        
+
+                                                        compiler.plugin("done", function(stats) {
                                                             // Write generated files to cache.
                                                             // Copy files from memory file-system to cache directory.
                                                             var filename = app.getFilenameFromUrl(req.url);
                                                             var baseSourcePath = LIB.path.dirname(filename);
                                                             var baseTargetPath = LIB.path.dirname(path);
-                                                            function copyForPath (subpath, callback) {
-                                                                var waitfor = LIB.waitfor.parallel(callback);
+                                                            function copyForPath (subpath) {
+                                                                // We use a sync call so we are done by the time we return.
                                                                 var files = compiler.outputFileSystem.readdirSync(LIB.path.join(baseSourcePath, subpath));
                                                                 files.forEach(function (file) {
-                                                                    waitfor(function (callback) {
-                                                                        if (compiler.outputFileSystem.statSync(LIB.path.join(baseSourcePath, subpath, file)).isDirectory()) {
-                                                                            return copyForPath(subpath + "/" + file, callback);
-                                                                        } else {
-                                                                			return compiler.outputFileSystem.readFile(LIB.path.join(baseSourcePath, subpath, file), function (err, data) {
-                                                                			    if (err) return callback(err);
-                                                                			    return LIB.fs.outputFile(LIB.path.join(baseTargetPath, subpath, file), data, callback);
-                                                                			});
+                                                                    // We use a sync call so we are done by the time we return.
+                                                                    if (compiler.outputFileSystem.statSync(LIB.path.join(baseSourcePath, subpath, file)).isDirectory()) {
+                                                                        return copyForPath(subpath + "/" + file);
+                                                                    } else {
+                                                                        // We use a sync call so we are done by the time we return.
+                                                            			var data = compiler.outputFileSystem.readFileSync(LIB.path.join(baseSourcePath, subpath, file));
+
+                                                                        if (/\.(css|js)/.test(file)) {
+                                                                            data = data.toString();
+                                                                            data = data.replace(/(__webpack_require__\.p = )"\/[^\/]+\/"(;)/, "$1" + 'window.z0_page_loadBaseUrl + "/"' + "$2");
                                                                         }
-                                                                    });
+
+                                                                        // We use a sync call so we are done by the time we return.
+                                                            			compiler.outputFileSystem.writeFileSync(LIB.path.join(baseSourcePath, subpath, file), data);
+
+                                                                        // We use a sync call so we are done by the time we return.
+                                                        			    LIB.fs.outputFileSync(LIB.path.join(baseTargetPath, subpath, file), data);
+                                                                    }
                                                                 });
-                                                                return waitfor();
                                                             }
-                                                            return copyForPath(".", function (err) {
-                                            			        if (err) {
-                                                			        console.error(err.stack);
-                                                			        return;
-                                            			        }
-                                                            });
-                                                        }
-    
+                                                            try {
+                                                                return copyForPath(".");
+                                                            } catch (err) {
+                                            			        console.error(err.stack);
+                                                            }
+                                                        });
                                                         req.url = req.params[0];
                                                         return app(req, res, function (err) {
                                                             if (err) {
