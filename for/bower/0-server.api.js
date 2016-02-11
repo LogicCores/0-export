@@ -4,49 +4,107 @@ exports.forLib = function (LIB) {
 	var exports = {};
 
 
+	function getGrunt () {
+        if (!getGrunt._GRUNT) {
+            getGrunt._GRUNT = LIB.Promise.promisify(function (callback) {
+                const GRUNT = require("grunt");
+/*
+                // And remove all required modules again.
+                // TODO: Use a separate process if we can.
+                function removeChildrenForModule (module) {
+                    Object.keys(module.children).forEach(function (path) {
+                        removeChildrenForModule(module.children[path]);
+                        delete require.cache[path];
+                    });
+                }
+                removeChildrenForModule(module);
+
+console.log("module.children", module.children);
+//console.log("require.cache", require.cache);
+*/
+                
+                try {
+                    GRUNT.loadTasks(LIB.path.dirname(require.resolve("grunt-bower-concat/package.json")) + "/tasks");
+                    GRUNT.registerInitTask('default', function() {
+                        GRUNT.task.run([
+                        	"bower_concat"
+                        ]);
+                    });
+                } catch (err) {
+                    return callback(err);
+                }
+                return callback(null, GRUNT);
+            })();
+        }
+        return getGrunt._GRUNT;
+	}
+
+
     var currentlyConcatenating = {};
+    var concatQueue = [];
+    function drainQueue () {
+        if (concatQueue.length === 0) {
+            return;
+        }
+        var nextConcatenate = concatQueue[0];
+        nextConcatenate().then(function () {
+            concatQueue.shift();
+            drainQueue();
+        });
+    }
     exports.concatenate = function (componentsPath, distPath, config) {
-
-        const GRUNT = require("grunt");
-
         if (currentlyConcatenating[componentsPath]) {
             return currentlyConcatenating[componentsPath];
         }
         return (currentlyConcatenating[componentsPath] = LIB.Promise.promisify(function (callback) {
-            
-            console.log("Concatenating bower files from '" + componentsPath + "' ...");
 
-            // TODO: Use our own grunt instance instead of global instance.
-			GRUNT.file.setBase(componentsPath);
+            concatQueue.push(function () {
+                return LIB.Promise.try(function () {
+                    
+                    console.log("Concatenating bower files from '" + componentsPath + "' and writing to '" + distPath + "' ...");
+        
+                    // TODO: Use our own grunt instance instead of global instance.
+                    return getGrunt().then(function (GRUNT) {
+    
+                        return LIB.Promise.promisify(function (callback) {
+                            try {
 
-			var gruntConfig = {
-                bower_concat: {
-                    all: {
-                        dest: distPath.replace(/\.[^\.]+$/, ".js"),
-					    cssDest: distPath.replace(/\.[^\.]+$/, ".css"),
-					    exclude: config.exclude || [],
-					    dependencies: config.dependencies || {},
-					    bowerOptions: {
-					      relative: false
-					    }
-                    }
-                }				                
-            };
+                    			GRUNT.file.setBase(componentsPath);
 
-            //console.log("gruntConfig", JSON.stringify(gruntConfig, null, 4));
+                    			var gruntConfig = {
+                                    bower_concat: {
+                                        all: {
+                                            dest: distPath.replace(/\.[^\.]+$/, ".js"),
+                    					    cssDest: distPath.replace(/\.[^\.]+$/, ".css"),
+                    					    exclude: config.exclude || [],
+                    					    dependencies: config.dependencies || {},
+                    					    bowerOptions: {
+                    					      relative: false
+                    					    }
+                                        }
+                                    }				                
+                                };
+                                //console.log("gruntConfig", JSON.stringify(gruntConfig, null, 4));
+                    			GRUNT.initConfig(gruntConfig);
 
-			GRUNT.initConfig(gruntConfig);
-            GRUNT.loadTasks(LIB.path.dirname(require.resolve("grunt-bower-concat/package.json")) + "/tasks");
-            GRUNT.registerInitTask('default', function() {
-                GRUNT.task.run([
-                	"bower_concat"
-                ]);
+                                return GRUNT.tasks(['default'], {
+                                    debug: false,
+                                    verbose: true
+                                }, callback);
+                            } catch (err) {
+                                return callback(err);
+                            }
+                        })();
+                    });
+                }).then(function () {
+                    callback(null);
+                }, callback);
             });
 
-            return GRUNT.tasks(['default'], {
-                debug: false,
-                verbose: true
-            }, callback);
+            if (concatQueue.length === 1) {
+                drainQueue();
+            }
+
         })()).then(function () {
             delete currentlyConcatenating[componentsPath];
         });
